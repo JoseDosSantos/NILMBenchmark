@@ -81,7 +81,7 @@ class Tester:
                 print(e)
 
         test_input, test_target = self.load_dataset(self.__test_directory)
-        model = create_model(self.__input_window_length, self.__n_cols)
+        model = create_model(self.__input_window_length, self.__n_cols, self.__network_type)
         model = load_model(
             model,
             self.__network_type,
@@ -165,8 +165,12 @@ class Tester:
         evaluation metrics (list): The MSE, MAE, and various compression ratios of the model.
 
         """
+        training_log = f"Window size: {self.__window_size} "\
+                       f"Weather: {self.__use_weather} " \
+                       f"Occupancy: {self.__use_occupancy} "
+        logging.info(training_log)
 
-        inference_log = "Inference Time: " + str(test_time)
+        inference_log = f"Inference Time: {test_time}"
         logging.info(inference_log)
 
         mean_squared_error = self.mean_squared_error(
@@ -186,7 +190,7 @@ class Tester:
 
         metric_string = f"MSE: {mean_squared_error}" \
                         f" MAE: {mean_absolute_error}" \
-                        f" SAE: {signal_aggregate_error}"
+                        f" SAE: {signal_aggregate_error}\n"
         logging.info(metric_string)
 
         # self.count_pruned_weights(model)

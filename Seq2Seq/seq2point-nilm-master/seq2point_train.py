@@ -48,7 +48,7 @@ class Trainer:
             patience=5,
             restore_weights=True,
             min_delta=1e-6,
-            verbose=2
+            verbose=1
     ):
         self.__appliance = appliance
         self.__algorithm = network_type
@@ -78,7 +78,7 @@ class Trainer:
         self.__validation_frequency = validation_frequency
         self.__ram_threshold = 5*10**6
         self.__skip_rows_train = 0
-        self.__validation_steps = 100
+        self.__validation_steps = self.__epochs
         self.__skip_rows_val = 0
 
         # Directories of the training and validation files. Always has the structure 
@@ -140,7 +140,7 @@ class Trainer:
             decimals=0
         ) + 1
         
-        model = create_model(self.__input_window_length, self.__n_cols)
+        model = create_model(self.__input_window_length, self.__n_cols, self.__network_type)
 
         model.compile(
             optimizer=tf.keras.optimizers.Adam(
