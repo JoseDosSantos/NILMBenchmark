@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import time
 import json
+import tensorflow as tf
 from model_structure import create_model, load_model
 from data_feeder import TestSlidingWindowGenerator
 import matplotlib.pyplot as plt
@@ -36,7 +37,8 @@ class Tester:
             log_file_dir,
             input_window_length,
             use_weather,
-            use_occupancy
+            use_occupancy,
+            plot_first
     ):
         self.__appliance = appliance
         self.__algorithm = algorithm
@@ -50,6 +52,7 @@ class Tester:
         self.__input_window_length = input_window_length
         self.__window_size = self.__input_window_length + 2
         self.__window_offset = int(0.5 * self.__window_size - 1)
+
         #self.__number_of_windows = 100
 
         self.__test_directory = test_directory
@@ -57,11 +60,25 @@ class Tester:
 
         self.__log_file = log_file_dir
         logging.basicConfig(filename=self.__log_file, level=logging.INFO)
+        self.__plot_first = plot_first
 
     def test_model(self):
 
         """ Tests a fully-trained model using a sliding window generator as an input. Measures inference time, gathers,
         and plots evaluation metrics. """
+
+        # This is necessary to make the code work with Tensorflow 2.
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        if gpus:
+            try:
+                # Currently, memory growth needs to be the same across GPUs
+                for gpu in gpus:
+                    tf.config.experimental.set_memory_growth(gpu, True)
+                logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+                print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+            except RuntimeError as e:
+                # Memory growth must be set before GPUs have been initialized
+                print(e)
 
         test_input, test_target = self.load_dataset(self.__test_directory)
         model = create_model(self.__input_window_length, self.__n_cols)
@@ -151,7 +168,6 @@ class Tester:
 
         inference_log = "Inference Time: " + str(test_time)
         logging.info(inference_log)
-
 
         mean_squared_error = self.mean_squared_error(
             y_true=self.denormalize(readings=y_true, name=self.__appliance),
@@ -251,27 +267,19 @@ class Tester:
         test_target (numpy.ndarray): The true energy values of the appliance.
 
         """
-        testing_history = self.denormalize(testing_history, self.__appliance)
-        test_target = self.denormalize(test_target, self.__appliance)
         test_agg = self.denormalize(test_input.flatten(), "mains")
-        test_agg = test_agg[:testing_history.size]
+        test_agg = test_agg[self.__window_offset: -self.__window_offset]
 
-        # testing_history = ((testing_history * stats["std"][self.__appliance])
-        #                    + stats["mean"][self.__appliance])
-        # test_target = ((test_target * stats["std"][self.__appliance])
-        #                    + stats["mean"][self.__appliance])
-        # test_agg = (test_input.flatten() * stats["std"]["mains"]) + stats["mean"]["mains"]
-        # test_agg = test_agg[:testing_history.size]
+        test_target = self.denormalize(test_target, self.__appliance)
+        test_target = test_target[self.__window_offset:-self.__window_offset]
 
-        # test_target[test_target < 0] = 0
-        # testing_history[testing_history < 0] = 0
-        # test_input[test_input < 0] = 0
+        testing_history = self.denormalize(testing_history, self.__appliance)
 
         # Plot testing outcomes against ground truth.
         plt.figure(1)
-        plt.plot(test_agg[self.__window_offset: -self.__window_offset], label="Aggregate")
-        plt.plot(test_target[:test_agg.size - (2 * self.__window_offset)], label="Ground Truth")
-        plt.plot(testing_history[:test_agg.size - (2 * self.__window_offset)], label="Predicted")
+        plt.plot(test_agg[:self.__plot_first], label="Aggregate")
+        plt.plot(test_target[:self.__plot_first], label="Ground Truth")
+        plt.plot(testing_history[:self.__plot_first], label="Predicted")
         plt.title(self.__appliance + " " + self.__network_type + "(" + self.__algorithm + ")")
         plt.ylabel("Power Value (Watts)")
         plt.xlabel("Testing Window")

@@ -44,9 +44,11 @@ class Trainer:
             epochs=10,
             input_window_length=599,
             validation_frequency=1,
+            early_stopping=True,
             patience=5,
+            restore_weights=True,
             min_delta=1e-6,
-            verbose=1
+            verbose=2
     ):
         self.__appliance = appliance
         self.__algorithm = network_type
@@ -54,7 +56,9 @@ class Trainer:
         self.__crop = crop
         self.__batch_size = batch_size
         self.__epochs = epochs
+        self.__early_stopping = early_stopping
         self.__patience = patience
+        self.__restore_weights = restore_weights
         self.__min_delta = min_delta
         self.__verbose = verbose
         self.__loss = "mse"
@@ -154,7 +158,7 @@ class Trainer:
             patience=self.__patience,
             verbose=self.__verbose,
             mode="auto",
-            restore_best_weights=True
+            restore_best_weights=self.__restore_weights
         )
 
         # can use checkpoint ###############################################
@@ -170,7 +174,9 @@ class Trainer:
         # callbacks=[early_stopping, model_checkpoint_callback]
         ###################################################################
 
-        callbacks = [early_stopping]
+        callbacks = []
+        if self.__early_stopping:
+            callbacks = [early_stopping]
         
         training_history = self.default_train(model, callbacks, steps_per_training_epoch)
 
