@@ -4,15 +4,15 @@ from seq2point_train import Trainer
 
 
 # Defaults / settings for IDE execution
-network_type = "GRU"
+network_type = "Transformer"
 device = "fridge"
 interval = "1min"       # 1min or 6s
-use_weather = True
-use_occupancy = True
-window_length = 49
-epochs = 50
-learning_rate = 0.00003
-batch_size = 1024
+use_weather = False
+use_occupancy = False
+window_length = 255
+epochs = 5
+learning_rate = 0.0001
+batch_size = 512
 early_stopping = True
 patience = 25
 restore_weights = True

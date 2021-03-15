@@ -1,6 +1,7 @@
 import tensorflow as tf
 import os
 from keras.layers import *
+from attention_layer import AttentionLayer
 
 
 def create_Seq2Seq(input_window_length, ncols):
@@ -64,6 +65,20 @@ def create_BiGRU(input_window_length, ncols):
     return model
 
 
+def create_Transformer(input_window_length, ncols, filters=32, kernel_size=4, units=128):
+    input_layer = Input(shape=(input_window_length, ncols))
+    #reshape_layer = Reshape((1, input_window_length, ncols))(input_layer)
+    conv_layer_1 = Conv1D(filters=filters, kernel_size=kernel_size, activation='relu')(input_layer)
+    conv_layer_2 = Conv1D(filters=filters, kernel_size=kernel_size, activation='relu')(conv_layer_1)
+    conv_layer_3 = Conv1D(filters=filters, kernel_size=kernel_size, activation='relu')(conv_layer_2)
+    conv_layer_4 = Conv1D(filters=filters, kernel_size=kernel_size, activation='relu')(conv_layer_3)
+    lstm_layer = Bidirectional(LSTM(units, activation="tanh", return_sequences=True),
+                               merge_mode="concat")(conv_layer_4)
+    attention_layer, weights = AttentionLayer(units=units)(lstm_layer)
+    dense_layer = Dense(units, activation='relu')(attention_layer)
+    regression_output = Dense(1, activation='relu', name="regression_output")(dense_layer)
+    model = tf.keras.Model(inputs=input_layer, outputs=regression_output)
+    return model
 
 def create_model(input_window_length, ncols, model_type="Seq2Seq"):
     if model_type == "Seq2Seq":
@@ -72,6 +87,8 @@ def create_model(input_window_length, ncols, model_type="Seq2Seq"):
     if model_type == "GRU":
         return create_BiGRU(input_window_length=input_window_length, ncols=ncols)
 
+    if model_type == "Transformer":
+        return create_Transformer(input_window_length=input_window_length, ncols=ncols)
     raise AttributeError(f"Model type {model_type} not recognized. Please provide a valid model type.")
 
 
