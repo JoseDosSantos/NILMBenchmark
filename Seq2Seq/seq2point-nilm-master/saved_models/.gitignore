@@ -1,5 +1,0 @@
-# Ignore everything here
-*
-
-# Except the gitignore. Basically the folder is synced, but the content is not.
-!.gitignore
