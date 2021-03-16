@@ -1,5 +1,4 @@
 import logging
-import numpy as np
 import pandas as pd
 import time
 import json
@@ -7,6 +6,7 @@ import tensorflow as tf
 from model_structure import create_model, load_model
 from data_feeder import TestSlidingWindowGenerator
 import matplotlib.pyplot as plt
+from errors import *
 
 
 class Tester:
@@ -155,6 +155,12 @@ class Tester:
         signal_aggregate_error = np.abs(r_hat - r) / r
         return signal_aggregate_error
 
+    def match_rate(self, y_true, y_pred):
+        minimum = np.sum(np.minimum(y_true[self.__window_offset:-self.__window_offset], y_pred))
+        maximum = np.sum(np.maximum(y_true[self.__window_offset:-self.__window_offset], y_pred))
+        return minimum / maximum
+
+
     def log_results(self, model, test_time, evaluation_metrics, y_true, y_pred):
 
         """Logs the inference time, MAE and MSE of an evaluated model.
@@ -173,27 +179,40 @@ class Tester:
         inference_log = f"Inference Time: {test_time}"
         logging.info(inference_log)
 
-        mean_squared_error = self.mean_squared_error(
+        mse = mean_squared_error(
             y_true=self.denormalize(readings=y_true, name=self.__appliance),
-            y_pred=self.denormalize(readings=y_pred, name=self.__appliance)
+            y_pred=self.denormalize(readings=y_pred, name=self.__appliance),
+            offset=self.__window_offset,
+            clip_values=True
         )
 
-        mean_absolute_error = self.mean_absolute_error(
+        mae = mean_absolute_error(
             y_true=self.denormalize(readings=y_true, name=self.__appliance),
-            y_pred=self.denormalize(readings=y_pred, name=self.__appliance)
+            y_pred=self.denormalize(readings=y_pred, name=self.__appliance),
+            offset=self.__window_offset,
+            clip_values=True
         )
 
-        signal_aggregate_error = self.normalised_signal_aggregate_error(
+        sae = normalised_signal_aggregate_error(
             y_true=self.denormalize(readings=y_true, name=self.__appliance),
-            y_pred=self.denormalize(readings=y_pred, name=self.__appliance)
+            y_pred=self.denormalize(readings=y_pred, name=self.__appliance),
+            offset=self.__window_offset,
+            clip_values=True
         )
 
-        metric_string = f"MSE: {mean_squared_error}" \
-                        f" MAE: {mean_absolute_error}" \
-                        f" SAE: {signal_aggregate_error}\n"
+        mr = match_rate(
+            y_true=self.denormalize(readings=y_true, name=self.__appliance),
+            y_pred=self.denormalize(readings=y_pred, name=self.__appliance),
+            offset=self.__window_offset,
+            clip_values=True
+        )
+
+        metric_string = f"MSE: {sae}" \
+                        f" MAE: {mae}" \
+                        f" SAE: {sae}" \
+                        f" Match Rate: {mr}\n"
         logging.info(metric_string)
 
-        # self.count_pruned_weights(model)
 
     def count_pruned_weights(self, model):
 

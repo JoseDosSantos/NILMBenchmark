@@ -5,7 +5,7 @@ from seq2point_test import Tester
 # Allows a model to be tested from the terminal.
 
 # Defaults / settings for IDE execution
-network_type = "GRU"
+network_type = "DAE"
 appliance = "fridge"
 interval = "1min"       # 1min or 6s
 dataset = "test"        # Use "test" for DRED or "ECO" for the corresponding ECO data
@@ -13,7 +13,7 @@ use_weather = True
 use_occupancy = True
 batch_size = 256
 plot_first = 1000       # Set to None to plot all available datapoints
-window_length = 49
+window_length = 599
 
 
 # You need to input your test data directory

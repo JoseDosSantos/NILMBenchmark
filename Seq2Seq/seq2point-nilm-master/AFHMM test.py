@@ -1,5 +1,6 @@
 from afhmm import AFHMM
 from afhmm_sac import AFHMM_SAC
+from co import CO
 import pandas as pd
 import numpy as np
 import time
@@ -12,7 +13,7 @@ if __name__ == '__main__':
     device = "fridge"
     interval = "1min"
     params = {}
-    model = AFHMM_SAC(params)
+    model = CO(params)
 
     data_fridge = pd.read_csv(f"../../data/appliances/{device}/{device}_training_{interval}_.csv")
 
@@ -52,12 +53,12 @@ if __name__ == '__main__':
     data_laptop_computer_test = pd.read_csv(f"../../data/appliances/{device}/{device}_test_{interval}_.csv")
 
 
-    n = 720 * 12
+    n = 100000
 
 
 
     start_time = time.time()
-    results = model.disaggregate_chunk(test_mains_list=[data_fridge_test["mains"][:n]])
+    results = model.disaggregate_chunk(mains=[data_fridge_test["mains"][:n]])
 
     end_time = time.time()
     test_time = end_time - start_time

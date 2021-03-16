@@ -4,7 +4,7 @@ from keras.layers import *
 from attention_layer import AttentionLayer
 
 
-def create_Seq2Seq(input_window_length, ncols):
+def create_seq2seq(input_window_length, ncols):
 
     """Specifies the structure of a seq2point model using Keras' functional API.
     Taken from Zhang, Zhong, Wang, Goddard, Sutton et al. (2018) Sequence-to-Point Learning With Neural Networks for
@@ -35,7 +35,7 @@ def create_Seq2Seq(input_window_length, ncols):
     return model
 
 
-def create_BiGRU(input_window_length, ncols):
+def create_bi_gru(input_window_length, ncols):
 
     """Specifies the structure of a Bidirectional GRU model using Keras' functional API.
     Taken from Krystalakos, Nalmpantis, Vrakas et al. (2018) Sliding Window Approach for Online Energy
@@ -65,7 +65,34 @@ def create_BiGRU(input_window_length, ncols):
     return model
 
 
-def create_Transformer(input_window_length, ncols, filters=32, kernel_size=4, units=128):
+def create_autoencoder(input_window_length, ncols):
+    """Specifies the structure of a Denoising Autoencoder model using Keras' functional API.
+    See Kelly, Knottenbelt et al. (2015) Neural NILM Deep Neural Networks Applied to Energy Disaggregation
+
+    Returns:
+    model (tensorflow.keras.Model): The uncompiled DAE model.
+
+    """
+
+    input_layer = Input(shape=(input_window_length, ncols))
+    reshape_layer_1 = Reshape((1, input_window_length, ncols))(input_layer)
+    conv_layer_1 = Conv2D(filters=8, kernel_size=(4, ncols), strides=(1, 1), padding="same",
+                                 activation="linear")(reshape_layer_1)
+    flatten_layer_1 = Flatten()(conv_layer_1)
+    dense_1 = Dense(units=(input_window_length)*8, activation="relu")(flatten_layer_1)
+    dense_2 = Dense(units=128, activation="relu")(dense_1)
+    dense_3 = Dense(units=(input_window_length)*8, activation="relu")(dense_2)
+    reshape_layer_2 = Reshape((input_window_length, 8))(dense_3)
+    conv_layer_2 = Conv1D(filters=1, kernel_size=4, strides=1, activation="linear", padding="same")(reshape_layer_2)
+    flatten_layer_2 = Flatten()(conv_layer_2)
+    output_layer = Dense(units=1, activation="linear")(flatten_layer_2)
+    model = tf.keras.Model(inputs=input_layer, outputs=output_layer)
+
+    return model
+
+
+
+def create_transformer(input_window_length, ncols, filters=32, kernel_size=4, units=128):
     input_layer = Input(shape=(input_window_length, ncols))
     #reshape_layer = Reshape((1, input_window_length, ncols))(input_layer)
     conv_layer_1 = Conv1D(filters=filters, kernel_size=kernel_size, activation='relu')(input_layer)
@@ -82,13 +109,14 @@ def create_Transformer(input_window_length, ncols, filters=32, kernel_size=4, un
 
 def create_model(input_window_length, ncols, model_type="Seq2Seq"):
     if model_type == "Seq2Seq":
-        return create_Seq2Seq(input_window_length=input_window_length, ncols=ncols)
+        return create_seq2seq(input_window_length=input_window_length, ncols=ncols)
 
     if model_type == "GRU":
-        return create_BiGRU(input_window_length=input_window_length, ncols=ncols)
+        return create_bi_gru(input_window_length=input_window_length, ncols=ncols)
 
-    if model_type == "Transformer":
-        return create_Transformer(input_window_length=input_window_length, ncols=ncols)
+    if model_type == "DAE":
+        return create_autoencoder(input_window_length=input_window_length, ncols=ncols)
+
     raise AttributeError(f"Model type {model_type} not recognized. Please provide a valid model type.")
 
 

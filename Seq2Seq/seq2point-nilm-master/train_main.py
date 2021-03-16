@@ -4,17 +4,17 @@ from seq2point_train import Trainer
 
 
 # Defaults / settings for IDE execution
-network_type = "Transformer"
+network_type = "DAE"
 device = "fridge"
 interval = "1min"       # 1min or 6s
-use_weather = False
-use_occupancy = False
-window_length = 255
-epochs = 5
+use_weather = True
+use_occupancy = True
+window_length = 599
+epochs = 15
 learning_rate = 0.0001
 batch_size = 512
 early_stopping = True
-patience = 25
+patience = 5
 restore_weights = True
 
 # Allows a model to be trained from the terminal.
