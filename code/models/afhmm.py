@@ -8,7 +8,6 @@ from hmmlearn import hmm
 from multiprocessing import Process, Manager
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
-from numba import jit
 import time
 
 

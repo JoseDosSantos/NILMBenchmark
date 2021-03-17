@@ -3,10 +3,10 @@ import pandas as pd
 import time
 import json
 import tensorflow as tf
-from code.models.neural_network_architectures import create_model, load_model
+from models.neural_network_architectures import create_model, load_model
 from data_feeder import TestSlidingWindowGenerator
 import matplotlib.pyplot as plt
-from errors import *
+from utils import *
 
 
 class Tester:
@@ -36,6 +36,7 @@ class Tester:
             saved_model_dir,
             log_file_dir,
             input_window_length,
+            output_length,
             use_weather,
             use_occupancy,
             plot_first
@@ -50,8 +51,9 @@ class Tester:
         self.__crop = crop
         self.__batch_size = batch_size
         self.__input_window_length = input_window_length
-        self.__window_size = self.__input_window_length + 2
-        self.__window_offset = int(0.5 * self.__window_size - 1)
+        self.__window_offset = self.__input_window_length // 2
+        self.__odd_input = self.__input_window_length % 2 == 1
+        self.__output_length = output_length
 
         self.__test_directory = test_directory
         self.__saved_model_dir = saved_model_dir
@@ -92,7 +94,8 @@ class Tester:
             number_of_windows=self.__batch_size,
             inputs=test_input,
             targets=test_target,
-            offset=self.__window_offset
+            offset=self.__window_offset,
+            odd_input=self.__odd_input
         )
 
         # Calculate the optimum steps per epoch.
@@ -105,10 +108,15 @@ class Tester:
         start_time = time.time()
         testing_history = model.predict(x=test_generator.load_dataset(), steps=steps_per_test_epoch, verbose=2)
 
+        if self.__output_length > 1:
+            testing_history = merge_overlapping_predictions(testing_history)
+
+
+
         end_time = time.time()
         test_time = end_time - start_time
 
-        self.log_results(model, test_time, test_time, test_target, testing_history)
+        self.log_results(model, test_target, testing_history)
         self.plot_results(testing_history, test_input, test_target)
 
     def load_dataset(self, directory):
@@ -148,7 +156,7 @@ class Tester:
         evaluation metrics (list): The MSE, MAE, and various compression ratios of the model.
 
         """
-        training_log = f"Window size: {self.__window_size} "\
+        training_log = f"Window size: {self.__input_window_length} "\
                        f"Weather: {self.__use_weather} " \
                        f"Occupancy: {self.__use_occupancy} "
         logging.info(training_log)
@@ -156,28 +164,32 @@ class Tester:
         inference_log = f"Inference Time: {test_time}"
         logging.info(inference_log)
 
+        # If we predict an output sequence, the difference in length will not be equal to the window offset, so
+        # we recalculate here
+
+        trim_offset = abs(len(y_true) - len(y_pred)) // 2
         mse = mean_squared_error(
-            y_true=self.denormalize(readings=y_true, name=self.__appliance),
-            y_pred=self.denormalize(readings=y_pred, name=self.__appliance),
-            offset=self.__window_offset
+            y_true=denormalize(readings=y_true, name=self.__appliance),
+            y_pred=denormalize(readings=y_pred, name=self.__appliance),
+            offset=trim_offset
         )
 
         mae = mean_absolute_error(
-            y_true=self.denormalize(readings=y_true, name=self.__appliance),
-            y_pred=self.denormalize(readings=y_pred, name=self.__appliance),
-            offset=self.__window_offset
+            y_true=denormalize(readings=y_true, name=self.__appliance),
+            y_pred=denormalize(readings=y_pred, name=self.__appliance),
+            offset=trim_offset
         )
 
         sae = normalised_signal_aggregate_error(
-            y_true=self.denormalize(readings=y_true, name=self.__appliance),
-            y_pred=self.denormalize(readings=y_pred, name=self.__appliance),
-            offset=self.__window_offset
+            y_true=denormalize(readings=y_true, name=self.__appliance),
+            y_pred=denormalize(readings=y_pred, name=self.__appliance),
+            offset=trim_offset
         )
 
         mr = match_rate(
-            y_true=self.denormalize(readings=y_true, name=self.__appliance),
-            y_pred=self.denormalize(readings=y_pred, name=self.__appliance),
-            offset=self.__window_offset
+            y_true=denormalize(readings=y_true, name=self.__appliance),
+            y_pred=denormalize(readings=y_pred, name=self.__appliance),
+            offset=trim_offset
         )
 
         metric_string = f"MSE: {mse}" \
@@ -199,20 +211,27 @@ class Tester:
         test_target (numpy.ndarray): The true energy values of the appliance.
 
         """
-        test_agg = self.denormalize(test_input.flatten(), "mains")
-        test_agg = test_agg[self.__window_offset: -self.__window_offset]
 
-        test_target = self.denormalize(test_target, self.__appliance)
-        test_target = test_target[self.__window_offset:-self.__window_offset]
+        if len(test_input.shape) > 1:
+            test_agg = denormalize(test_input[0], "mains")
+        else:
+            test_agg = denormalize(test_input.flatten(), "mains")
 
-        testing_history = self.denormalize(testing_history, self.__appliance)
+        test_target = denormalize(test_target, self.__appliance)
+        testing_history = denormalize(testing_history, self.__appliance)
+
+        trim_offset = abs(len(test_target) - len(testing_history)) // 2
+        if trim_offset > 0:
+            test_agg = test_agg[trim_offset: -trim_offset]
+            test_target = test_target[trim_offset:-trim_offset]
+
 
         # Plot testing outcomes against ground truth.
         plt.figure(1)
         plt.plot(test_agg[:self.__plot_first], label="Aggregate")
         plt.plot(test_target[:self.__plot_first], label="Ground Truth")
         plt.plot(testing_history[:self.__plot_first], label="Predicted")
-        plt.title(self.__appliance + " " + self.__network_type + "(" + self.__algorithm + ")")
+        plt.title(f"{self.__appliance}  {self.__network_type} (Window: {self.__input_window_length}")
         plt.ylabel("Power Value (Watts)")
         plt.xlabel("Testing Window")
         plt.legend()

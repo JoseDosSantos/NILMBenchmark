@@ -30,6 +30,8 @@ class TrainSlidingWindowGenerator:
             chunk_size,
             shuffle,
             offset,
+            odd_input,
+            output_length=1,
             use_weather=False,
             use_occupancy=False,
             batch_size=1000,
@@ -43,6 +45,8 @@ class TrainSlidingWindowGenerator:
         self.__chunk_size = chunk_size
         self.__shuffle = shuffle
         self.__offset = offset
+        self.__output_length = output_length
+        self.__odd_input = odd_input
         self.__use_weather = use_weather
         self.__use_occupancy = use_occupancy
         self.__crop = crop
@@ -98,79 +102,60 @@ class TrainSlidingWindowGenerator:
 
         """
 
-        # If the data can be loaded in one go, don't skip any rows.
-        if self.total_size <= self.__ram_threshold:
 
-            # Returns an array of the content from the CSV file.
-            data_frame = pd.read_csv(self.__file_name, header=0, nrows=self.__crop)
+        # If we use evenly sized windows with odd input lengths, we run into problems when trying to predict the center
+        # point of odd observations and vice versa. Therefore we only allow both odd (indicated by self.__odd_input) or
+        # or both even windows. This is not the most concise code, but it does the job.
 
-            inputs = np.array(data_frame["mains"])
-            outputs = np.array(data_frame[self.__appliance])
+        if self.__odd_input:
+            if self.__output_length % 2 == 0:
+                raise ValueError("Odd input length with even output window detected. Currently, only odd length "
+                                 "output windows are supported with odd input windows.")
+        else:
+            if self.__output_length % 2 == 1:
+                raise ValueError("Even input length with odd output window detected. Currently, only eben length "
+                                 "output windows are supported with even input windows.")
 
-            if self.__use_occupancy:
-                inputs = np.stack((inputs, np.array(data_frame["occupied"])))
+        out_offset = self.__offset - self.__output_length // 2
+        odd_offset = int(self.__odd_input)
 
-            # Transpose and vstack because the weather array is 2D
-            if self.__use_weather:
-                inputs = np.vstack((inputs, np.array(data_frame[["temperature", "humidity"]]).T))
 
-            del data_frame
+        # Returns an array of the content from the CSV file.
+        data_frame = pd.read_csv(self.__file_name, header=0, nrows=self.__crop)
 
-            inputs = inputs.T
+        inputs = np.array(data_frame["mains"])
+        outputs = np.array(data_frame[self.__appliance])
 
-            maximum_batch_size = len(inputs) - 2 * self.__offset
+        if self.__use_occupancy:
+            inputs = np.stack((inputs, np.array(data_frame["occupied"])))
 
-            if self.__batch_size < 0:
-                self.__batch_size = maximum_batch_size
+        # Transpose and vstack because the weather array is 2D
+        if self.__use_weather:
+            inputs = np.vstack((inputs, np.array(data_frame[["temperature", "humidity"]]).T))
 
-            indices = np.arange(maximum_batch_size)
-            if self.__shuffle:
-                np.random.shuffle(indices)
+        del data_frame
 
-            while True:
-                for start_index in range(0, maximum_batch_size, self.__batch_size):
-                    splice = indices[start_index:start_index + self.__batch_size]
-                    input_data = np.array([inputs[index:index + 2 * self.__offset + 1] for index in splice])
-                    output_data = outputs[splice + self.__offset].reshape(-1, 1)
-                    yield input_data, output_data
+        inputs = inputs.T
 
-        # I commented this out for now, we currently assume that everything fits into memory
-        # Todo: delete if not used later
-        # Skip rows where needed to allow data to be loaded properly when there is not enough memory.
-        # if self.total_size >= self.__ram_threshold:
-        #     number_of_chunks = np.arange(self.total_size / self.__chunk_size)
-        #     if self.__shuffle:
-        #         np.random.shuffle(number_of_chunks)
-        #
-        #     # Yield the data in sections.
-        #     for index in number_of_chunks:
-        #          data_array = np.array(
-        #              pd.read_csv(self.__file_name,
-        #                          skiprows=int(index) * self.__chunk_size,
-        #                          header=0,
-        #                          nrows=self.__crop
-        #                          )
-        #          )
-        #         inputs = data_array[:, 0]
-        #         outputs = data_array[:, 1]
-        #
-        #         maximum_batch_size = inputs.size - 2 * self.__offset
-        #         self.total_num_samples = maximum_batch_size
-        #         if self.__batch_size < 0:
-        #             self.__batch_size = maximum_batch_size
-        #         self.__batch_size = maximum_batch_size
-        #
-        #         indicies = np.arange(maximum_batch_size)
-        #         if self.__shuffle:
-        #             np.random.shuffle(indicies)
-        #
-        #     while True:
-        #         for start_index in range(0, maximum_batch_size, self.__batch_size):
-        #             splice = indicies[start_index : start_index + self.__batch_size]
-        #             input_data = np.array([inputs[index : index + 2 * self.__offset + 1] for index in splice])
-        #             output_data = outputs[splice + self.__offset].reshape(-1, 1)
-        #
-        #             yield input_data, output_data
+        maximum_batch_size = len(inputs) - 2 * self.__offset
+
+        if self.__batch_size < 0:
+            self.__batch_size = maximum_batch_size
+
+        indices = np.arange(maximum_batch_size)
+        if self.__shuffle:
+            np.random.shuffle(indices)
+
+        while True:
+            for start_index in range(0, maximum_batch_size, self.__batch_size):
+                splice = indices[start_index:start_index + self.__batch_size]
+                input_data = np.array([inputs[index:index + 2 * self.__offset + odd_offset] for index in splice])
+                output_data = np.array(
+                    [outputs[index + out_offset:index + out_offset + self.__output_length + odd_offset]
+                     for index in splice])
+                yield input_data, output_data
+
+
 
 
 class TestSlidingWindowGenerator(object):
@@ -186,11 +171,12 @@ class TestSlidingWindowGenerator(object):
 
     """
 
-    def __init__(self, number_of_windows, inputs, targets, offset):
+    def __init__(self, number_of_windows, inputs, targets, offset, odd_input):
         self.__number_of_windows = number_of_windows
         self.__offset = offset
         self.__inputs = inputs
         self.__targets = targets
+        self.__odd_input = odd_input
         self.total_size = max(inputs.shape)
         self.max_number_of_windows = self.total_size - 2 * self.__offset
 
@@ -209,10 +195,12 @@ class TestSlidingWindowGenerator(object):
         if self.__number_of_windows < 0:
             self.__number_of_windows = self.max_number_of_windows
 
+        odd_offset = int(self.__odd_input)
+
         indices = np.arange(self.max_number_of_windows, dtype=int)
         for start_index in range(0, self.max_number_of_windows, self.__number_of_windows):
             splice = indices[start_index:start_index + self.__number_of_windows]
-            input_data = np.array([self.__inputs[index:index + 2 * self.__offset + 1] for index in splice])
+            input_data = np.array([self.__inputs[index:index + 2 * self.__offset + odd_offset] for index in splice])
             target_data = self.__targets[splice + self.__offset].reshape(-1, 1)
             yield input_data, target_data
 

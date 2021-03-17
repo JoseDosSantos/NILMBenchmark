@@ -43,6 +43,7 @@ class Trainer:
             learning_rate=0.001,
             epochs=10,
             input_window_length=599,
+            output_length=1,
             validation_frequency=1,
             early_stopping=True,
             patience=5,
@@ -72,8 +73,10 @@ class Trainer:
         self.__n_cols = 1 + self.__use_weather * 2 + self.__use_occupancy * 1
 
         self.__input_window_length = input_window_length
-        self.__window_size = 2 + self.__input_window_length
-        self.__window_offset = int((0.5 * self.__window_size) - 1)
+        # self.__window_size = 2 + self.__input_window_length
+        self.__output_length = output_length
+        self.__odd_input = self.__input_window_length % 2 == 1
+        self.__window_offset = self.__input_window_length // 2
         self.__max_chunk_size = 5 * 10 ** 2
         self.__validation_frequency = validation_frequency
         self.__ram_threshold = 5*10**6
@@ -95,6 +98,8 @@ class Trainer:
             crop=self.__crop, shuffle=True,
             skip_rows=self.__skip_rows_train,
             offset=self.__window_offset,
+            output_length=self.__output_length,
+            odd_input=self.__odd_input,
             ram_threshold=self.__ram_threshold,
             use_occupancy=self.__use_occupancy,
             use_weather=self.__use_weather
@@ -109,6 +114,8 @@ class Trainer:
             shuffle=True,
             skip_rows=self.__skip_rows_val,
             offset=self.__window_offset,
+            output_length=self.__output_length,
+            odd_input=self.__odd_input,
             ram_threshold=self.__ram_threshold,
             use_occupancy=self.__use_occupancy,
             use_weather=self.__use_weather
@@ -245,6 +252,7 @@ class Trainer:
         plt.ylabel('Loss')
         plt.xlabel('Epoch')
         plt.legend()
+        plt.show()
 
-        file_name = "saved_models/" + self.__appliance + "_" + self.__network_type + "_training_results.png"
+        file_name = "outputs/plots/" + self.__appliance + "_" + self.__network_type + "_training_results.png"
         plt.savefig(fname=file_name)

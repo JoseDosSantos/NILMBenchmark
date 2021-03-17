@@ -1,0 +1,30 @@
+WARNING:tensorflow:Callbacks method `on_predict_batch_end` is slow compared to the batch time (batch time: 0.0010s vs `on_predict_batch_end` time: 0.0030s). Check your callbacks.
+INFO:root:Window size: 80 Weather: False Occupancy: False 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x000002959E92E348>
+INFO:root:MSE: 1232.5093178312334 MAE: 31.34231828193145 SAE: 0.3296821749525941 Match Rate: 0.3176017605884576
+
+INFO:root:Window size: 80 Weather: False Occupancy: False 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x0000020B20DDE388>
+INFO:root:MSE: 1162.9856085028352 MAE: 24.914598994339375 SAE: 0.2950239751729524 Match Rate: 0.4105236952806349
+
+INFO:root:Window size: 80 Weather: True Occupancy: False 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x000001EA193F7608>
+INFO:root:MSE: 1258.692069645859 MAE: 26.446855657719674 SAE: 0.24622798482856653 Match Rate: 0.3762240307816569
+
+INFO:root:Window size: 80 Weather: True Occupancy: False 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x000001C887A57C48>
+INFO:root:MSE: 1170.2871839719705 MAE: 24.174166140937484 SAE: 0.21311801752904372 Match Rate: 0.40795473435991164
+
+INFO:root:Window size: 80 Weather: True Occupancy: False 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x000001AA25C17708>
+INFO:root:MSE: 1279.9474313044486 MAE: 25.466940309148175 SAE: 0.27600501586703136 Match Rate: 0.3978706145445109
+
+WARNING:tensorflow:Callbacks method `on_predict_batch_end` is slow compared to the batch time (batch time: 0.0010s vs `on_predict_batch_end` time: 0.0020s). Check your callbacks.
+INFO:root:Window size: 80 Weather: False Occupancy: True 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x000001DE97AC0648>
+INFO:root:MSE: 1112.598584268551 MAE: 23.98072601695703 SAE: 0.26545498127439204 Match Rate: 0.42096050277453745
+
+INFO:root:Window size: 80 Weather: True Occupancy: True 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x0000028D048A99C8>
+INFO:root:MSE: 1279.1806189309455 MAE: 25.677661934315324 SAE: 0.26111804698216823 Match Rate: 0.39162266583944805
+

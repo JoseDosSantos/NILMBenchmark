@@ -67,3 +67,23 @@ def denormalize(readings, name):
     # To make sure arrays have the same shape
     read_norm = np.array(read_norm).reshape((-1, 1))
     return read_norm
+
+
+def merge_overlapping_predictions(arr):
+    # If we use overlapping test batches to predict we receive overlapping predictions. This function returns a merged
+    # array (where overlapping regions are averaged)
+    length, window_size = arr.shape
+    out = np.zeros(shape=(length+window_size, 1))
+
+    norm_arr = np.concatenate(
+        [np.linspace(1, window_size, num=window_size),
+         np.repeat(window_size, length-window_size),
+         np.linspace(window_size, 1, num=window_size)]
+    ).reshape((-1, 1))
+
+    for idx in range(length):
+        out[idx:idx+window_size] += arr[idx].reshape((-1, 1))
+    out /= norm_arr
+    return out
+
+

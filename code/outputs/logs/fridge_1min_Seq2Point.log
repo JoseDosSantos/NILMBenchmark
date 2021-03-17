@@ -1,0 +1,30 @@
+INFO:root:Window size: 61 Weather: False Occupancy: False 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x00000207042AD408>
+INFO:root:Window size: 61 Weather: False Occupancy: False 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x000002641012D548>
+INFO:root:Window size: 61 Weather: False Occupancy: False 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x000002542B73AF88>
+INFO:root:Window size: 61 Weather: False Occupancy: False 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x0000023E41E01EC8>
+INFO:root:MSE: 1367.8475528279394 MAE: 32.91056509528996 SAE: 0.2554717372640554 Match Rate: 0.28049699154685287
+
+INFO:root:Window size: 61 Weather: False Occupancy: False 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x000001D39268E0C8>
+INFO:root:MSE: 1367.8475528279394 MAE: 32.91056509528996 SAE: 0.2554717372640554 Match Rate: 0.28049699154685287
+
+INFO:root:Window size: 61 Weather: False Occupancy: False 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x000002AA0509EB08>
+INFO:root:MSE: 1367.8475528279394 MAE: 32.91056509528996 SAE: 0.2554717372640554 Match Rate: 0.28049699154685287
+
+INFO:root:Window size: 11 Weather: False Occupancy: False 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x000001CCD7D11FC8>
+INFO:root:MSE: 1172.9503260274632 MAE: 24.204052688148185 SAE: 0.029597071099891802 Match Rate: 0.37028338782993125
+
+INFO:root:Window size: 33 Weather: False Occupancy: False 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x000002C951B1E348>
+INFO:root:MSE: 1177.254134040064 MAE: 25.787005275804287 SAE: 0.09258224744135551 Match Rate: 0.35603289257870085
+
+INFO:root:Window size: 33 Weather: False Occupancy: False 
+INFO:root:Inference Time: <tensorflow.python.keras.engine.functional.Functional object at 0x0000027B8DB76E48>
+INFO:root:MSE: 1177.254134040064 MAE: 25.787005275804287 SAE: 0.09258224744135551 Match Rate: 0.35603289257870085
+

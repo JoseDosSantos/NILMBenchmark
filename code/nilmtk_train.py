@@ -4,8 +4,8 @@ import time
 import matplotlib.pyplot as plt
 
 from models.co import CO
-from models.afhmm import AFHMM
-from errors import *
+#from models.afhmm import AFHMM
+from utils import *
 from typing import Union
 
 import warnings
@@ -35,9 +35,10 @@ class Trainer:
 
 if __name__ == '__main__':
 
-    interval = "6s"
+    interval = "1min"
     params = {}
-    model = AFHMM(params)
+    model = CO(params)
+    train_denorm = True
 
     def load_df(app, freq, cols, dataset="training", denorm=False):
         df = pd.read_csv(f"../data/appliances/{app}/{app}_{dataset}_{freq}_.csv")[cols]
@@ -47,30 +48,34 @@ if __name__ == '__main__':
 
     apps_training = {}
     for app in APPLIANCES:
-        apps_training[app] = load_df(app, interval, cols=app, dataset="training", denorm=True)
+        apps_training[app] = load_df(app, interval, cols=app, dataset="training", denorm=train_denorm)
 
-    mains_training = load_df("fridge", interval, cols=["mains"], dataset="training", denorm=True)
+    mains_training = load_df("fridge", interval, cols=["mains"], dataset="training", denorm=train_denorm)
 
     model.partial_fit(train_main=[mains_training], train_appliances=apps_training)
 
     apps_test = {}
     for app in APPLIANCES:
-        apps_test[app] = load_df(app, interval, cols=app, dataset="test", denorm=True)
+        apps_test[app] = load_df(app, interval, cols=app, dataset="test", denorm=train_denorm)
 
-    mains_test = load_df("fridge", interval, cols=["mains"], dataset="test", denorm=True)
+    mains_test = load_df("fridge", interval, cols=["mains"], dataset="test", denorm=train_denorm)
 
-    n = 720*12
+    n = len(mains_test)
 
     start_time = time.time()
-    results = model.disaggregate_chunk(test_mains_list=[mains_test[:n]])[0]
+    results = model.disaggregate_chunk(mains=[mains_test[:n]])[0]
 
     end_time = time.time()
     test_time = end_time - start_time
     print(test_time)
 
     for app in APPLIANCES:
-        true_apps = np.array(apps_test[app][:n])#enormalize(apps_test[app][:n], app)
-        pred_apps = np.array(results[app])# denormalize(results[app], app)
+        if train_denorm:
+            true_apps = np.array(apps_test[app][:n])
+            pred_apps = np.array(results[app])
+        else:
+            true_apps = denormalize(apps_test[app][:n], app)
+            pred_apps = denormalize(results[app], app)
 
         mse = mean_squared_error(true_apps, pred_apps)
         mae = mean_absolute_error(true_apps, pred_apps)
@@ -82,8 +87,12 @@ if __name__ == '__main__':
     res_df = pd.DataFrame(results)
 
     for app in APPLIANCES:
-        true_apps = np.array(apps_test[app][:n])#denormalize(apps_test[app][:n], app)
-        pred_apps = np.array(results[app]) #denormalize(results[app], app)
+        if train_denorm:
+            true_apps = np.array(apps_test[app][:n])
+            pred_apps = np.array(results[app])
+        else:
+            true_apps = denormalize(apps_test[app][:n], app)
+            pred_apps = denormalize(results[app], app)
 
         plt.figure(1)
         plt.plot(true_apps, label="Ground Truth")
@@ -101,5 +110,5 @@ if __name__ == '__main__':
 
 
 
-    res_df.plot()
+    #res_df.plot()
     print(results)

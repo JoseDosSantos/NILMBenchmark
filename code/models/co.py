@@ -1,13 +1,19 @@
+from warnings import warn
+
 import pandas as pd
 import numpy as np
+import pickle
+import copy
 
 from nilmtk.utils import find_nearest
 from nilmtk.feature_detectors import cluster
 from nilmtk.disaggregate import Disaggregator
+from nilmtk.datastore import HDFDataStore
 
 
 class CO(Disaggregator):
     """1 dimensional combinatorial optimisation NILM algorithm.
+
     Attributes
     ----------
     model : list of dicts
@@ -17,6 +23,7 @@ class CO(Disaggregator):
                this set of states.  We need this information because we
                need the appliance type (and perhaps some other metadata)
                for each model.
+
     state_combinations : 2D array
         Each column is an appliance.
         Each row is a possible combination of power demand values e.g.
@@ -24,6 +31,7 @@ class CO(Disaggregator):
              [0, 0,  0, 100],
              [0, 0, 50,   0],
              [0, 0, 50, 100], ...]
+
     MIN_CHUNK_LENGTH : int
     """
 
@@ -59,7 +67,7 @@ class CO(Disaggregator):
         if len(train_appliances) > 12:
             max_num_clusters = 2
         else:
-            max_num_clusters = 3
+            max_num_clusters = 10
         appliance_in_model = [d['appliance_name'] for d in self.model]
 
         for appliance, readings in train_appliances.items():
@@ -88,9 +96,12 @@ class CO(Disaggregator):
 
     def disaggregate_chunk(self, mains):
         """In-memory disaggregation.
+
         Parameters
         ----------
         mains : pd.Series
+
+
         Returns
         -------
         appliance_powers : pd.DataFrame where each column represents a
