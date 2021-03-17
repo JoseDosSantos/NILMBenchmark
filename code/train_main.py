@@ -1,6 +1,6 @@
 import argparse
 from remove_space import remove_space
-from seq2point_train import Trainer
+from nn_train import Trainer
 
 
 # Defaults / settings for IDE execution

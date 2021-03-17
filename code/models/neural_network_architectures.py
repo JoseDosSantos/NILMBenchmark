@@ -3,7 +3,7 @@ import os
 from keras.layers import *
 
 
-def create_seq2seq(input_window_length, ncols):
+def create_seq2point(input_window_length, ncols):
 
     """Specifies the structure of a seq2point model using Keras' functional API.
     Taken from Zhang, Zhong, Wang, Goddard, Sutton et al. (2018) Sequence-to-Point Learning With Neural Networks for
@@ -91,8 +91,8 @@ def create_autoencoder(input_window_length, ncols):
 
 
 def create_model(input_window_length, ncols, model_type="Seq2Seq"):
-    if model_type == "Seq2Seq":
-        return create_seq2seq(input_window_length=input_window_length, ncols=ncols)
+    if model_type == "Seq2Point":
+        return create_seq2point(input_window_length=input_window_length, ncols=ncols)
 
     if model_type == "GRU":
         return create_bi_gru(input_window_length=input_window_length, ncols=ncols)

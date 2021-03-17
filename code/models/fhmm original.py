@@ -6,19 +6,9 @@ from nilmtk.disaggregate import Disaggregator
 import cvxpy as cvx
 from hmmlearn import hmm
 from multiprocessing import Process, Manager
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning)
-from numba import jit
-import time
 
 
 class AFHMM(Disaggregator):
-    start_time = 0
-
-    def exec_time(self, message=""):
-        end_time = time.time()
-        print(message, " took ", end_time - self.start_time)
-        self.start_time = time.time()
 
     def __init__(self, params):
         self.model = []
@@ -43,12 +33,12 @@ class AFHMM(Disaggregator):
         self.appliances = []
         train_main = pd.concat(train_main, axis=0)
         train_app_tmp = []
-        # for app_name, df_list in train_appliances.items():
-        #     df_list = pd.concat(df_list, axis=0)
-        #     train_app_tmp.append((app_name, df_list))
+        for app_name, df_list in train_appliances:
+            df_list = pd.concat(df_list, axis=0)
+            train_app_tmp.append((app_name, df_list))
 
         # All the initializations required by the model
-        #train_appliances = train_app_tmp
+        train_appliances = train_app_tmp
         learnt_model = OrderedDict()
         means_vector = []
         one_hot_states_vector = []
@@ -57,7 +47,7 @@ class AFHMM(Disaggregator):
         states_vector = []
         train_main = train_main.values.flatten().reshape((-1, 1))
 
-        for appliance_name, power in train_appliances.items():
+        for appliance_name, power in train_appliances:
             # print (appliance_name)
             # Learning the pi's and transistion probabliites  for each appliance using a simple HMM
             self.appliances.append(appliance_name)
@@ -91,6 +81,7 @@ class AFHMM(Disaggregator):
 
         self.means_vector = means_vector
         self.pi_s_vector = pi_s_vector
+        self.means_vector = means_vector
         self.transmat_vector = transmat_vector
         print("Finished Training")
 
@@ -98,14 +89,16 @@ class AFHMM(Disaggregator):
 
         # A threads that does disaggregation
 
+        means_vector = self.means_vector
         pi_s_vector = self.pi_s_vector
         means_vector = self.means_vector
         transmat_vector = self.transmat_vector
 
         sigma = 100 * np.ones((len(test_mains), 1))
         flag = 0
+
         for epoch in range(6):
-            # The alternative Minimization
+            # The alernative Minimization
             if epoch % 2 == 1:
                 usage = np.zeros((len(test_mains)))
                 for appliance_id in range(self.num_appliances):
@@ -114,6 +107,7 @@ class AFHMM(Disaggregator):
                 sigma = (test_mains.flatten() - usage.flatten()).reshape((-1, 1))
                 sigma = np.where(sigma < 1, 1, sigma)
             else:
+
                 if flag == 0:
                     constraints = []
                     cvx_state_vectors = []
@@ -174,7 +168,6 @@ class AFHMM(Disaggregator):
                         term_2 -= cvx.sum(cvx.multiply(first_one_hot_states, np.log(pi)))
                     flag = 1
 
-
                 expression = 0
                 term_3 = 0
                 term_4 = 0
@@ -183,14 +176,10 @@ class AFHMM(Disaggregator):
                     term_4 += .5 * ((test_mains[t][0] - total_observed_reading[t][0]) ** 2 / (sigma[t] ** 2))
                     term_3 += .5 * (np.log(sigma[t] ** 2))
                 expression = term_1 + term_2 + term_3 + term_4
-
-                #self.start_time = time.time()
-
                 expression = cvx.Minimize(expression)
-                prob = cvx.Problem(expression, constraints,)
+                prob = cvx.Problem(expression, constraints, )
                 prob.solve(solver=cvx.SCS, verbose=False, warm_start=True)
                 s_ = [i.value for i in cvx_state_vectors]
-                #self.exec_time("solve")
 
         prediction_dict = {}
         for appliance_id in range(self.num_appliances):
@@ -201,10 +190,10 @@ class AFHMM(Disaggregator):
         # Store the result in the index corresponding to the thread.
 
         d[index] = pd.DataFrame(prediction_dict, dtype='float32')
-        print(index)
 
     def disaggregate_chunk(self, test_mains_list):
-        # Distributes the test mains across multiple threads and runs them in parallel
+
+        # Sistributes the test mains across multiple threads and runs them in parallel
         manager = Manager()
         d = manager.dict()
 

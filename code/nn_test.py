@@ -186,17 +186,7 @@ class Tester:
                         f" Match Rate: {mr}\n"
         logging.info(metric_string)
 
-    def denormalize(self, readings, name):
-        with open("stats_DRED_1min.json") as file:
-            stats = json.load(file)
-        read_norm = readings * stats["std"][name] + stats["mean"][name]
 
-        # Can't have negative energy readings - set any results below 0 to 0.
-        read_norm[read_norm < 0] = 0
-
-        # To make sure arrays have the same shape
-        read_norm = read_norm.reshape((-1, 1))
-        return read_norm
 
     def plot_results(self, testing_history, test_input, test_target):
 

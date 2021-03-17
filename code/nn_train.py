@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from data_feeder import TrainSlidingWindowGenerator
-from code.models.neural_network_architectures import create_model, save_model
+from models.neural_network_architectures import create_model, save_model
 # tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 

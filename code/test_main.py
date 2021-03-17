@@ -1,6 +1,6 @@
 import argparse
 from remove_space import remove_space
-from seq2point_test import Tester
+from nn_test import Tester
 
 # Allows a model to be tested from the terminal.
 
