@@ -1,5 +1,36 @@
 import numpy as np
 import json
+import yaml
+import os
+
+def read_yaml(x: str) -> dict:
+    """
+    Read yaml files and return content as dictionary
+        x: name of the file
+    """
+    with open(x, "r") as con:
+        config = yaml.safe_load(con)
+    return config
+
+
+def check_dir(path: str) -> None:
+    # Create target Directory if don't exist
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+
+def get_model_save_path(network_type, interval, device, use_weather, use_occupancy) -> str:
+    check_dir(f"outputs/saved_models/{device}")
+    save_model_dir = f"outputs/saved_models/{device}/{network_type}_{interval}"
+    if use_weather:
+        save_model_dir += "_weather"
+    if use_occupancy:
+        save_model_dir += "_occupancy"
+    return save_model_dir + ".h5"
+
+def save_dict(data, path):
+    with open(f"{path}.json", 'w') as f:
+        json.dump(data, f, indent=4)
 
 
 def clip(arr):
@@ -72,6 +103,7 @@ def denormalize(readings, name):
 def merge_overlapping_predictions(arr):
     # If we use overlapping test batches to predict we receive overlapping predictions. This function returns a merged
     # array (where overlapping regions are averaged)
+    arr = np.squeeze(arr)
     length, window_size = arr.shape
     out = np.zeros(shape=(length+window_size, 1))
 

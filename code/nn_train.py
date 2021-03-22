@@ -1,6 +1,7 @@
 import tensorflow as tf 
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 
 from data_feeder import TrainSlidingWindowGenerator
 from models.neural_network_architectures import create_model, save_model
@@ -49,7 +50,8 @@ class Trainer:
             patience=5,
             restore_weights=True,
             min_delta=1e-6,
-            verbose=1
+            verbose=1,
+            return_time=False
     ):
         self.__appliance = appliance
         self.__algorithm = network_type
@@ -62,6 +64,7 @@ class Trainer:
         self.__restore_weights = restore_weights
         self.__min_delta = min_delta
         self.__verbose = verbose
+        self.__return_time = return_time
         self.__loss = "mse"
         self.__metrics = ["mse", "msle", "mae"]
         self.__learning_rate = learning_rate
@@ -184,8 +187,10 @@ class Trainer:
         callbacks = []
         if self.__early_stopping:
             callbacks = [early_stopping]
-        
+
+        start_time = time.time()
         training_history = self.default_train(model, callbacks, steps_per_training_epoch)
+        end_time = time.time()
 
         training_history.history["val_loss"] = np.repeat(
             training_history.history["val_loss"],
@@ -197,6 +202,9 @@ class Trainer:
                    self.__appliance, self.__save_model_dir)
 
         self.plot_training_results(training_history)
+        if self.__return_time:
+            return  end_time - start_time
+
 
     def default_train(self, model, callbacks, steps_per_training_epoch):
 
@@ -248,7 +256,7 @@ class Trainer:
 
         plt.plot(training_history.history["loss"], label="MSE (Training Loss)")
         plt.plot(training_history.history["val_loss"], label="MSE (Validation Loss)")
-        plt.title('Training History')
+        plt.title(f'Training History for {self.__appliance}. Model: {self.__network_type}')
         plt.ylabel('Loss')
         plt.xlabel('Epoch')
         plt.legend()

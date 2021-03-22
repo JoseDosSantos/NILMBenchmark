@@ -39,7 +39,10 @@ class Tester:
             output_length,
             use_weather,
             use_occupancy,
-            plot_first
+            plot_first,
+            dataset,
+            return_time=False,
+            return_predictions=False
     ):
         self.__appliance = appliance
         self.__algorithm = algorithm
@@ -57,15 +60,20 @@ class Tester:
 
         self.__test_directory = test_directory
         self.__saved_model_dir = saved_model_dir
+        self.__dataset = dataset
 
         self.__log_file = log_file_dir
         logging.basicConfig(filename=self.__log_file, level=logging.INFO)
         self.__plot_first = plot_first
+        self.__return_time = return_time
+        self.__return_predictions = return_predictions
 
     def test_model(self):
 
         """ Tests a fully-trained model using a sliding window generator as an input. Measures inference time, gathers,
         and plots evaluation metrics. """
+
+        start_time = time.time()
 
         # This is necessary to make the code work with Tensorflow 2.
         gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -107,17 +115,22 @@ class Tester:
         # Test the model.
         start_time = time.time()
         testing_history = model.predict(x=test_generator.load_dataset(), steps=steps_per_test_epoch, verbose=2)
+        end_time = time.time()
 
         if self.__output_length > 1:
             testing_history = merge_overlapping_predictions(testing_history)
 
+        self.log_results(test_target, testing_history)
+        if self.__plot_first != -1:
+            self.plot_results(testing_history, test_input, test_target)
 
-
-        end_time = time.time()
-        test_time = end_time - start_time
-
-        self.log_results(model, test_target, testing_history)
-        self.plot_results(testing_history, test_input, test_target)
+        if self.__return_predictions:
+            if self.__return_time:
+                return denormalize(readings=testing_history, name=self.__appliance), end_time - start_time
+            else:
+                return denormalize(readings=testing_history, name=self.__appliance)
+        if self.__return_time:
+            return end_time - start_time
 
     def load_dataset(self, directory):
         """Loads the testing dataset from the location specified by file_name.
@@ -146,7 +159,7 @@ class Tester:
         del data_frame
         return test_input, test_target
 
-    def log_results(self, test_time, y_true, y_pred):
+    def log_results(self, y_true, y_pred):
 
         """Logs the inference time, MAE and MSE of an evaluated model.
 
@@ -156,41 +169,25 @@ class Tester:
         evaluation metrics (list): The MSE, MAE, and various compression ratios of the model.
 
         """
-        training_log = f"Window size: {self.__input_window_length} "\
-                       f"Weather: {self.__use_weather} " \
-                       f"Occupancy: {self.__use_occupancy} "
-        logging.info(training_log)
 
-        inference_log = f"Inference Time: {test_time}"
-        logging.info(inference_log)
+        test_log = f"Test dataset:{self.__dataset}"\
+                   f"Window size: {self.__input_window_length} "\
+                   f"Weather: {self.__use_weather} "\
+                   f"Occupancy: {self.__use_occupancy} "
+        logging.info(test_log)
 
         # If we predict an output sequence, the difference in length will not be equal to the window offset, so
         # we recalculate here
 
         trim_offset = abs(len(y_true) - len(y_pred)) // 2
-        mse = mean_squared_error(
-            y_true=denormalize(readings=y_true, name=self.__appliance),
-            y_pred=denormalize(readings=y_pred, name=self.__appliance),
-            offset=trim_offset
-        )
 
-        mae = mean_absolute_error(
-            y_true=denormalize(readings=y_true, name=self.__appliance),
-            y_pred=denormalize(readings=y_pred, name=self.__appliance),
-            offset=trim_offset
-        )
+        y_true = denormalize(readings=y_true, name=self.__appliance)
+        y_pred = denormalize(readings=y_pred, name=self.__appliance)
 
-        sae = normalised_signal_aggregate_error(
-            y_true=denormalize(readings=y_true, name=self.__appliance),
-            y_pred=denormalize(readings=y_pred, name=self.__appliance),
-            offset=trim_offset
-        )
-
-        mr = match_rate(
-            y_true=denormalize(readings=y_true, name=self.__appliance),
-            y_pred=denormalize(readings=y_pred, name=self.__appliance),
-            offset=trim_offset
-        )
+        mse = mean_squared_error(y_true=y_true, y_pred=y_pred, offset=trim_offset)
+        mae = mean_absolute_error(y_true=y_true, y_pred=y_pred, offset=trim_offset)
+        sae = normalised_signal_aggregate_error(y_true=y_true, y_pred=y_pred, offset=trim_offset)
+        mr = match_rate(y_true=y_true, y_pred=y_pred, offset=trim_offset)
 
         metric_string = f"MSE: {mse}" \
                         f" MAE: {mae}" \

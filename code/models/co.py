@@ -67,7 +67,7 @@ class CO(Disaggregator):
         if len(train_appliances) > 12:
             max_num_clusters = 2
         else:
-            max_num_clusters = 10
+            max_num_clusters = 3
         appliance_in_model = [d['appliance_name'] for d in self.model]
 
         for appliance, readings in train_appliances.items():

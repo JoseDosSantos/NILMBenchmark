@@ -202,13 +202,13 @@ class AFHMM(Disaggregator):
         d[index] = pd.DataFrame(prediction_dict, dtype='float32')
         print(index)
 
-    def disaggregate_chunk(self, test_mains_list):
+    def disaggregate_chunk(self, mains):
         # Distributes the test mains across multiple threads and runs them in parallel
         manager = Manager()
         d = manager.dict()
 
         predictions_lst = []
-        for test_mains in test_mains_list:
+        for test_mains in mains:
             test_mains_big = test_mains.values.flatten().reshape((-1, 1))
             self.arr_of_results = []
             threads = []

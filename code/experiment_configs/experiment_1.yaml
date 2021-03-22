@@ -1,0 +1,29 @@
+devices: [fridge]
+interval: 1min
+use_weather: False
+use_occupancy: False
+models:
+    model1:
+        network_type: GLUConv
+        window_length: 64
+        output_length: 8
+        epochs: 1
+        learning_rate: 0.00001
+        batch_size: 512
+        early_stopping: True
+        patience: 15
+        restore_weights: True
+    model2:
+        network_type: Seq2Point
+        window_length: 61
+        output_length: 1
+        epochs: 1
+        learning_rate: 0.00001
+        batch_size: 512
+        early_stopping: True
+        patience: 15
+        restore_weights: True
+    
+evaluate: [test, ECO]
+
+

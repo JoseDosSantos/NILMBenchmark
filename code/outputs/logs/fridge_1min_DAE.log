@@ -1,1 +1,0 @@
-WARNING:tensorflow:Model was constructed with shape (None, 599, 4) for input Tensor("input_1_1:0", shape=(None, 599, 4), dtype=float32), but it was called on an input with incompatible shape (None, None).

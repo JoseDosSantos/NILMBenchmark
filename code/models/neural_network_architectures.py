@@ -175,7 +175,7 @@ def create_model(input_window_length, ncols, model_type="Seq2Seq"):
     if model_type == "Seq2Point":
         return create_seq2point(input_window_length=input_window_length, ncols=ncols)
 
-    if model_type == "GRU":
+    if model_type == "BiGRU":
         return create_bi_gru(input_window_length=input_window_length, ncols=ncols)
 
     if model_type == "DAE":

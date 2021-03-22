@@ -1,0 +1,18 @@
+{
+    "train_times": {
+        "GLUConv": {
+            "fridge": 6.068314790725708
+        },
+        "Seq2Point": {
+            "fridge": 3.0017282962799072
+        }
+    },
+    "test_times": {
+        "GLUConv": {
+            "fridge": 0.4795701503753662
+        },
+        "Seq2Point": {
+            "fridge": 0.32306790351867676
+        }
+    }
+}
