@@ -1,0 +1,50 @@
+# 1H intervals, 1min data, no weather, no occupancy
+
+devices: [fridge, cooker, microwave, electric heating element, washing machine, television]
+interval: 1min
+use_weather: False
+use_occupancy: False
+models:
+    model1:
+        network_type: Seq2Point
+        window_length: 61
+        output_length: 1
+        epochs: 100
+        learning_rate: 0.0001
+        batch_size: 2048
+        early_stopping: True
+        patience: 10
+        restore_weights: True
+    model2:
+        network_type: BiGRU
+        window_length: 61
+        output_length: 1
+        epochs: 100
+        learning_rate: 0.0001
+        batch_size: 2048
+        early_stopping: True
+        patience: 10
+        restore_weights: True
+    model3:
+        network_type: DAE
+        window_length: 60
+        output_length: 60
+        epochs: 100
+        learning_rate: 0.0001
+        batch_size: 2048
+        early_stopping: True
+        patience: 10
+        restore_weights: True
+    model4:
+        network_type: CO
+        window_length: 1
+        output_length: 1
+        epochs: 1
+        learning_rate: 1
+        batch_size: 1
+        early_stopping: 1
+        patience: 1
+        restore_weights: 1
+evaluate: [test, ECO]
+
+
