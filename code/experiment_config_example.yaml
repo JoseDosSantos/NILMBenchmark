@@ -1,4 +1,6 @@
-# 1H intervals, 1min data, no weather, no occupancy
+# Example config
+# CO and AFHMM just need placeholder parameters
+
 
 devices: [fridge, cooker, microwave, electric heating element, washing machine, television]
 interval: 1min
@@ -37,6 +39,16 @@ models:
         restore_weights: True
     model4:
         network_type: CO
+        window_length: 1
+        output_length: 1
+        epochs: 1
+        learning_rate: 1
+        batch_size: 1
+        early_stopping: 1
+        patience: 1
+        restore_weights: 1
+    model4:
+        network_type: AFHMM
         window_length: 1
         output_length: 1
         epochs: 1

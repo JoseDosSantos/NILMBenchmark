@@ -63,7 +63,13 @@ class Tester:
         self.__dataset = dataset
 
         self.__log_file = log_file_dir
-        logging.basicConfig(filename=self.__log_file, level=logging.INFO)
+
+        # In Python 3.8 we can just add force=True to the basic config, but project is written in 3.7
+        # so clear and reset path manually (there's probably a better way)
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
+        logging.basicConfig(filename=log_file_dir, format='%(message)s', level=logging.INFO)
+
         self.__plot_first = plot_first
         self.__return_time = return_time
         self.__return_predictions = return_predictions

@@ -19,9 +19,9 @@ def check_dir(path: str) -> None:
         os.mkdir(path)
 
 
-def get_model_save_path(network_type, interval, device, use_weather, use_occupancy) -> str:
-    check_dir(f"outputs/saved_models/{device}")
-    save_model_dir = f"outputs/saved_models/{device}/{network_type}_{interval}"
+def get_model_save_path(network_type, interval, device, window_length, use_weather, use_occupancy) -> str:
+    check_dir(f"F://training_outputs/saved_models/{device}")
+    save_model_dir = f"F://training_outputs//saved_models/{device}/{network_type}_{interval}_{window_length}"
     if use_weather:
         save_model_dir += "_weather"
     if use_occupancy:
@@ -46,6 +46,7 @@ def mean_squared_error(y_true, y_pred, offset=None, clip_values=False):
     if offset:
         y_true = y_true[offset:-offset]
 
+    assert y_true.shape == y_pred.shape
     return np.mean(np.power((y_true - y_pred), 2))
 
 
@@ -56,6 +57,7 @@ def mean_absolute_error(y_true, y_pred, offset=None, clip_values=False):
 
     if offset:
         y_true = y_true[offset:-offset]
+    assert y_true.shape == y_pred.shape
 
     return np.mean(np.abs(y_true - y_pred))
 
@@ -68,6 +70,8 @@ def normalised_signal_aggregate_error(y_true, y_pred, offset=None, clip_values=F
     if offset:
         y_true = y_true[offset:-offset]
 
+    assert y_true.shape == y_pred.shape
+
     r = np.sum(y_true)
     r_hat = np.sum(y_pred)
     signal_aggregate_error = np.abs(r_hat - r) / r
@@ -79,16 +83,20 @@ def match_rate(y_true, y_pred, offset=None, clip_values=False):
         y_true = clip(y_true)
         y_pred = clip(y_pred)
 
+
     if offset:
         y_true = y_true[offset:-offset]
+
+    assert y_true.shape == y_pred.shape
+
 
     minimum = np.sum(np.minimum(y_true, y_pred))
     maximum = np.sum(np.maximum(y_true, y_pred))
     return minimum / maximum
 
 
-def denormalize(readings, name):
-    with open("../stats_DRED_1min.json") as file:
+def denormalize(readings, name, path="../stats_DRED_1min.json"):
+    with open(path) as file:
         stats = json.load(file)
     read_norm = readings * stats["std"][name] + stats["mean"][name]
 

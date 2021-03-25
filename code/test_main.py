@@ -5,17 +5,18 @@ from nn_test import Tester
 # Allows a model to be tested from the terminal.
 
 # Defaults / settings for IDE execution
-network_type = "GLUConv"
-appliance = "cooker"
-interval = "1min"       # 1min or 6s
-dataset = "test"        # Use "test" for DRED or "ECO" for the corresponding ECO data
+network_type = "Seq2Point"
+appliance = "fridge"
+interval = "6s"       # 1min or 6s
+dataset = "ECO"        # Use "test" for DRED or "ECO" for the corresponding ECO data
 use_weather = False
 use_occupancy = False
 batch_size = 256
 plot_first = None       # Set to None to plot all available datapoints
-window_length = 64
-output_length = 8
-
+window_length = 51
+output_length = 1
+return_time = False
+return_results = False
 
 # You need to input your test data directory
 test_directory = f"../data/appliances/{appliance}/{appliance}_{dataset}_{interval}_.csv"
@@ -34,6 +35,8 @@ parser.add_argument("--use_occupancy", type=bool, default=use_occupancy, help="I
 parser.add_argument("--use_weather", type=bool, default=use_weather, help="Include weather data for training. Default is False. ")
 parser.add_argument("--plot_first", type=int, default=plot_first, help="How many datapoints to plot. Default is None (=plot all). ")
 parser.add_argument("--interval", type=str, default=interval, help="Sampling interval to be used. Either '1min' or '6s'. ")
+parser.add_argument("--return_time", type=str, default=return_time, help="Return inference time. Used for testing. Default is False. ")
+parser.add_argument("--return_results", type=str, default=return_results, help="Return results. Used for testing. Default is False. ")
 
 arguments = parser.parse_args()
 
@@ -56,7 +59,9 @@ tester = Tester(
     output_length=arguments.output_length,
     use_weather=arguments.use_weather,
     use_occupancy=arguments.use_occupancy,
-    plot_first=arguments.plot_first
+    plot_first=arguments.plot_first,
+    return_time=arguments.return_time,
+    return_predictions=arguments.return_results,
+    dataset=dataset
 )
-tester.test_model()
-
+results = tester.test_model()

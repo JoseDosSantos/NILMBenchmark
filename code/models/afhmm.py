@@ -5,8 +5,9 @@ import numpy as np
 from nilmtk.disaggregate import Disaggregator
 import cvxpy as cvx
 from hmmlearn import hmm
-from multiprocessing import Process, Manager
+from multiprocessing import Process, Manager, cpu_count
 import warnings
+
 warnings.filterwarnings("ignore", category=UserWarning)
 import time
 
@@ -47,7 +48,7 @@ class AFHMM(Disaggregator):
         #     train_app_tmp.append((app_name, df_list))
 
         # All the initializations required by the model
-        #train_appliances = train_app_tmp
+        # train_appliances = train_app_tmp
         learnt_model = OrderedDict()
         means_vector = []
         one_hot_states_vector = []
@@ -173,7 +174,6 @@ class AFHMM(Disaggregator):
                         term_2 -= cvx.sum(cvx.multiply(first_one_hot_states, np.log(pi)))
                     flag = 1
 
-
                 expression = 0
                 term_3 = 0
                 term_4 = 0
@@ -183,13 +183,13 @@ class AFHMM(Disaggregator):
                     term_3 += .5 * (np.log(sigma[t] ** 2))
                 expression = term_1 + term_2 + term_3 + term_4
 
-                #self.start_time = time.time()
+                # self.start_time = time.time()
 
                 expression = cvx.Minimize(expression)
-                prob = cvx.Problem(expression, constraints,)
+                prob = cvx.Problem(expression, constraints, )
                 prob.solve(solver=cvx.SCS, verbose=False, warm_start=True)
                 s_ = [i.value for i in cvx_state_vectors]
-                #self.exec_time("solve")
+                # self.exec_time("solve")
 
         prediction_dict = {}
         for appliance_id in range(self.num_appliances):
@@ -200,32 +200,35 @@ class AFHMM(Disaggregator):
         # Store the result in the index corresponding to the thread.
 
         d[index] = pd.DataFrame(prediction_dict, dtype='float32')
-        print(index)
+        # print(index)
 
-    def disaggregate_chunk(self, mains):
+    def disaggregate_chunk(self, test_mains):
+
         # Distributes the test mains across multiple threads and runs them in parallel
         manager = Manager()
         d = manager.dict()
 
         predictions_lst = []
-        for test_mains in mains:
-            test_mains_big = test_mains.values.flatten().reshape((-1, 1))
-            self.arr_of_results = []
-            threads = []
-            for test_block in range(int(math.ceil(len(test_mains_big) / self.time_period))):
-                test_mains = test_mains_big[test_block * (self.time_period):(test_block + 1) * self.time_period]
-                t = Process(target=self.disaggregate_thread, args=(test_mains, test_block, d))
-                threads.append(t)
+        test_mains_big = test_mains.flatten().reshape((-1, 1))
+        self.arr_of_results = []
 
-            for t in threads:
-                t.start()
+        threads = []
 
-            for t in threads:
-                t.join()
+        for test_block in range(int(math.ceil(len(test_mains_big) / self.time_period))):
+            test_mains = test_mains_big[test_block * (self.time_period):(test_block + 1) * self.time_period]
+            t = Process(target=self.disaggregate_thread, args=(test_mains, test_block, d))
+            threads.append(t)
 
-            for i in range(len(threads)):
-                self.arr_of_results.append(d[i])
-            prediction = pd.concat(self.arr_of_results, axis=0)
-            predictions_lst.append(prediction)
+        for t in threads:
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        for i in range(len(threads)):
+            self.arr_of_results.append(d[i])
+        prediction = pd.concat(self.arr_of_results, axis=0)
+        predictions_lst.append(prediction)
 
         return predictions_lst
+

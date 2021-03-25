@@ -1,18 +1,56 @@
 {
     "train_times": {
-        "GLUConv": {
-            "fridge": 6.068314790725708
-        },
         "Seq2Point": {
-            "fridge": 3.0017282962799072
-        }
+            "fridge": 101.11218738555908,
+            "cooker": 108.28210377693176,
+            "microwave": 160.22735571861267,
+            "electric heating element": 176.42703652381897,
+            "washing machine": 36.70156693458557,
+            "television": 110.48758578300476
+        },
+        "BiGRU": {
+            "fridge": 518.2888560295105,
+            "cooker": 431.9027760028839,
+            "microwave": 384.9755964279175,
+            "electric heating element": 452.2208697795868,
+            "washing machine": 284.05001044273376,
+            "television": 424.15591263771057
+        },
+        "DAE": {
+            "fridge": 201.5009262561798,
+            "cooker": 138.9935486316681,
+            "microwave": 106.32864308357239,
+            "electric heating element": 283.9825792312622,
+            "washing machine": 156.97963666915894,
+            "television": 194.34123134613037
+        },
+        "CO": 2.0725525617599487
     },
     "test_times": {
-        "GLUConv": {
-            "fridge": 0.4795701503753662
-        },
         "Seq2Point": {
-            "fridge": 0.32306790351867676
-        }
+            "fridge": 0.37308382987976074,
+            "cooker": 0.22205018997192383,
+            "microwave": 0.35511887073516846,
+            "electric heating element": 0.2561004161834717,
+            "washing machine": 0.22105026245117188,
+            "television": 0.30856966972351074
+        },
+        "BiGRU": {
+            "fridge": 1.366808533668518,
+            "cooker": 1.334301233291626,
+            "microwave": 1.42031991481781,
+            "electric heating element": 1.3202974796295166,
+            "washing machine": 1.5668530464172363,
+            "television": 1.324298620223999
+        },
+        "DAE": {
+            "fridge": 0.1950439214706421,
+            "cooker": 0.19504761695861816,
+            "microwave": 0.1725839376449585,
+            "electric heating element": 0.16803836822509766,
+            "washing machine": 0.17103886604309082,
+            "television": 0.18204009532928467
+        },
+        "CO": 0.008126527070999146
     }
 }

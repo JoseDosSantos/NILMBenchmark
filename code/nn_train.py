@@ -51,7 +51,8 @@ class Trainer:
             restore_weights=True,
             min_delta=1e-6,
             verbose=1,
-            return_time=False
+            return_time=False,
+            plot_training=False
     ):
         self.__appliance = appliance
         self.__algorithm = network_type
@@ -71,6 +72,7 @@ class Trainer:
         self.__beta_1 = 0.9
         self.__beta_2 = 0.999
         self.__save_model_dir = save_model_dir
+        self.__plot_training = plot_training
         self.__use_occupancy = use_occupancy
         self.__use_weather = use_weather
         self.__n_cols = 1 + self.__use_weather * 2 + self.__use_occupancy * 1
@@ -201,7 +203,8 @@ class Trainer:
         save_model(model, self.__network_type, self.__algorithm, 
                    self.__appliance, self.__save_model_dir)
 
-        self.plot_training_results(training_history)
+        if self.__plot_training:
+            self.plot_training_results(training_history)
         if self.__return_time:
             return  end_time - start_time
 

@@ -4,13 +4,13 @@ from nn_train import Trainer
 
 
 # Defaults / settings for IDE execution
-network_type = "GLUConv"
-device = "cooker"
+network_type = "Seq2Point"
+device = "fridge"
 interval = "1min"       # 1min or 6s
 use_weather = False
 use_occupancy = False
-window_length = 64
-output_length = 8
+window_length = 61
+output_length = 1
 epochs = 1
 learning_rate = 0.00003
 batch_size = 1024

@@ -4,10 +4,11 @@ import time
 import logging
 
 import matplotlib.pyplot as plt
-
+import math
 from models.co import CO
 from models.afhmm import AFHMM
 import utils
+from multiprocessing import cpu_count
 from typing import Union
 
 import warnings
@@ -40,7 +41,6 @@ def run_model(
         export_predictions=False,
         verbose=False
 ):
-
     if appliances:
         appliance_list = appliances
     else:
@@ -49,7 +49,7 @@ def run_model(
     train_appliances = {}
     for app in appliance_list:
         train_appliances[app] = load_df(app, interval, col=app, dataset="train", denorm=train_denorm)
-    train_mains = load_df("fridge", interval, col="mains", dataset="training", denorm=train_denorm)
+    train_mains = load_df("fridge", interval, col="mains", dataset="train", denorm=train_denorm)
 
     if model_type == "CO":
         model = CO({})
@@ -72,22 +72,42 @@ def run_model(
         except:
             pass
 
-    if model_type=="AFHMM" and test_dataset=="ECO":
+    if model_type == "AFHMM" and test_dataset == "ECO":
         raise ValueError("Do not use AFHMM with ECO. It is not currently implemented due to long testing times.")
 
     test_time_agg = 0
     eval_counter = 0
 
-    if model_type=="AFHMM":
+    if model_type == "AFHMM":
+        num_workers = cpu_count()
+
+        # hardcoded fix for now
+        chunk_length = 720
         test_mains = load_df(appliance_list[0], interval, col="mains", dataset=test_dataset, denorm=train_denorm)
+
+        test_mains = test_mains.values.flatten().reshape((-1, 1))
         n = len(test_mains)
+        n_chunks = int(math.ceil(len(test_mains) / chunk_length))
+
+        # test_mains_chunks = [test_mains_big[i:i+self.time_period] for i in range(0, test_mains_big.shape[0], self.time_period)]
+        n_iter = math.ceil(n_chunks / num_workers)
+        results = []
         test_start_time = time.time()
-        results = model.disaggregate_chunk(mains=pd.Series([test_mains[:n]]))[0]
+
+        print(f"Starting disaggregation for {n_iter} chunks.")
+        for i in tqdm(range(n_iter)):
+            # print(i * num_workers * chunk_length, i * num_workers * chunk_length + chunk_length * num_workers)
+            mains = test_mains[
+                    i * num_workers * chunk_length:i * num_workers * chunk_length + chunk_length * num_workers]
+            # print(len(mains))
+            results.append(model.disaggregate_chunk(mains)[0])
+            pd.concat(results, axis=0).to_csv(f"quicksaves/checkpoint{i}_{interval}.csv", sep=";")
         test_time = time.time() - test_start_time
+        results = pd.concat(results, axis=0)[:n]
 
     for app in appliance_list:
         try:
-            if model_type=="CO":
+            if model_type == "CO":
                 test_mains = load_df(app, interval, col="mains", dataset=test_dataset, denorm=train_denorm)
                 n = len(test_mains)
                 test_start_time = time.time()
@@ -106,7 +126,7 @@ def run_model(
             sae = utils.normalised_signal_aggregate_error(true_apps, pred_apps)
             mr = utils.match_rate(true_apps, pred_apps)
 
-            log_file_dir = f"outputs/logs/{experiment_name}/{model_type}_{app}.log"
+            log_file_dir = f"Nilmtk/logs/{experiment_name}/{model_type}_{app}.log"
 
             # In Python 3.8 we can just add force=True to the basic config, but project is written in 3.7
             # so clear and reset path manually (there's probably a better way)
@@ -124,10 +144,9 @@ def run_model(
             logging.info(metric_string)
 
             if export_predictions:
-                utils.check_dir(f"outputs/model_predictions/{experiment_name}/")
-                results_path = f"outputs/model_predictions/{experiment_name}/{model_type}_{app}_{test_dataset}.csv"
+                utils.check_dir(f"Nilmtk/model_predictions/{experiment_name}/")
+                results_path = f"Nilmtk/model_predictions/{experiment_name}/{model_type}_{app}_{test_dataset}.csv"
                 pd.DataFrame(pred_apps).to_csv(results_path, sep=";")
-
 
             test_time_agg += test_time
             eval_counter += 1
@@ -169,5 +188,5 @@ def run_model(
     #res_df.plot()
 
 if __name__ == '__main__':
-    t1, t2 = run_model("AFHMM", APPLIANCES, "1min", "test", "experiment_1", return_time=True, export_predictions=True, verbose=True)
+    t1, t2 = run_model("AFHMM", APPLIANCES, "6s", "test", "experiment_4", return_time=True, export_predictions=True, verbose=True)
     print(t1, t2)

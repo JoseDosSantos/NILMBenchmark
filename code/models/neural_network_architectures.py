@@ -98,15 +98,15 @@ def create_seq2point(input_window_length, ncols):
 
     input_layer = Input(shape=(input_window_length, ncols))
     reshape_layer = Reshape((1, input_window_length, ncols))(input_layer)
-    conv_layer_1 = Conv2D(filters=30, kernel_size=(10, ncols), strides=(1, 1), padding="same",
+    conv_layer_1 = Conv1D(filters=30, kernel_size=10, strides=1, padding="same",
                                  activation="relu")(reshape_layer)
-    conv_layer_2 = Conv2D(filters=30, kernel_size=(8, 1), strides=(1, 1), padding="same",
+    conv_layer_2 = Conv1D(filters=30, kernel_size=8, strides=1, padding="same",
                                  activation="relu")(conv_layer_1)
-    conv_layer_3 = Conv2D(filters=40, kernel_size=(6, 1), strides=(1, 1), padding="same",
+    conv_layer_3 = Conv1D(filters=40, kernel_size=6, strides=1, padding="same",
                                  activation="relu")(conv_layer_2)
-    conv_layer_4 = Conv2D(filters=50, kernel_size=(5, 1), strides=(1, 1), padding="same",
+    conv_layer_4 = Conv1D(filters=50, kernel_size=5, strides=1, padding="same",
                                  activation="relu")(conv_layer_3)
-    conv_layer_5 = Conv2D(filters=50, kernel_size=(5, 1), strides=(1, 1), padding="same",
+    conv_layer_5 = Conv1D(filters=50, kernel_size=5, strides=1, padding="same",
                                  activation="relu")(conv_layer_4)
     flatten_layer = Flatten()(conv_layer_5)
     label_layer = Dense(1024, activation="relu")(flatten_layer)
@@ -129,8 +129,7 @@ def create_bi_gru(input_window_length, ncols):
 
     input_layer = Input(shape=(input_window_length, ncols))
     reshape_layer_1 = Reshape((1, input_window_length, ncols))(input_layer)
-    conv_layer_1 = Convolution2D(filters=16, kernel_size=(4, ncols), strides=(1, 1), padding="same",
-                                 activation="relu")(reshape_layer_1)
+    conv_layer_1 = Conv1D(filters=16, kernel_size=4, strides=1, padding="same", activation="relu")(reshape_layer_1)
     reshape_layer_2 = Reshape((input_window_length, 16))(conv_layer_1)
     gru_layer_1 = Bidirectional(GRU(units=64, activation="tanh", return_sequences=True),
                                 merge_mode="concat")(reshape_layer_2)
@@ -157,7 +156,7 @@ def create_autoencoder(input_window_length, ncols):
 
     input_layer = Input(shape=(input_window_length, ncols))
     reshape_layer_1 = Reshape((1, input_window_length, ncols))(input_layer)
-    conv_layer_1 = Conv2D(filters=8 * ncols, kernel_size=(4, ncols), strides=(1, 1), padding="same",
+    conv_layer_1 = Conv1D(filters=8, kernel_size=4, strides=1, padding="same",
                                  activation="linear")(reshape_layer_1)
     flatten_layer_1 = Flatten()(conv_layer_1)
     dense_1 = Dense(units=(input_window_length)*8, activation="relu")(flatten_layer_1)
